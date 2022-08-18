@@ -37,6 +37,9 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class CouponIssuanceScheduler {
 
+    private final JobLauncher jobLauncher;
+    private final BatchJobConfig jobConfig;
+
     private final CouponRepository couponRepository;
     private final MemberRepository memberRepository;
     private final GivenCouponRepository givenCouponRepository;
@@ -64,6 +67,30 @@ public class CouponIssuanceScheduler {
             givenCouponRepository.save(givenCoupon);
         }
         log.info("스케줄러 끝 시간: {}", LocalDateTime.now());
+    }
+
+    /**
+     * 매월 1일 자정에 회원 등급을 업데이트하고 등급에 따른 쿠폰을 지급해주는 Batch Job 을 실행하는 Scheduler 입니다.
+     *
+     * @author 민아영
+     * @since 1.0.0
+     */
+    @Async
+    @Scheduled(cron = "@monthly", zone = "Asia/Seoul")
+    public void scheduleMemberGradeCoupon() {
+        log.info("등급 쿠폰 스케줄러 시작 시간: {}", LocalDateTime.now());
+
+        Job job = jobConfig.memberGradeJob();
+        JobParameters jobParameters = new JobParameters();
+
+        try {
+            jobLauncher.run(job, jobParameters);
+        } catch (JobExecutionAlreadyRunningException | JobInstanceAlreadyCompleteException
+                 | JobParametersInvalidException | JobRestartException e) {
+            log.error(e.getMessage());
+        }
+
+        log.info("등급 쿠폰 스케줄러 끝 시간: {}", LocalDateTime.now());
     }
 
 }
