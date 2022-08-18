@@ -5,12 +5,9 @@ spring:
   application:
     name: marketgg-batch
 
-#  MEMO spring-batch 관련 설정
   batch:
-#  MEMO 시작 시 Job 자동 한번 실행 (default: true)
     job:
       enabled: false
-#  MEMO spring batch 데이터 베이스 SQL 초기화 script 실행 (자동 메타 테이블 생성)
     jdbc:
       initialize-schema: always
 

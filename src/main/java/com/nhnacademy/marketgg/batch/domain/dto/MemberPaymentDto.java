@@ -13,7 +13,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Setter
 @Getter
-public class MemberPaymentResult {
+public class MemberPaymentDto {
 
     private Long memberNo;
 

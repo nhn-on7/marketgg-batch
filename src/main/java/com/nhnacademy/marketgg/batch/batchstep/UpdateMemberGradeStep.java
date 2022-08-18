@@ -1,6 +1,6 @@
 package com.nhnacademy.marketgg.batch.batchstep;
 
-import com.nhnacademy.marketgg.batch.domain.dto.MemberPaymentResult;
+import com.nhnacademy.marketgg.batch.domain.dto.MemberPaymentDto;
 import com.nhnacademy.marketgg.batch.domain.entity.Member;
 import com.nhnacademy.marketgg.batch.domain.entity.MemberGrade;
 import com.nhnacademy.marketgg.batch.exception.MemberGradeNotFoundException;
@@ -57,7 +57,7 @@ public class UpdateMemberGradeStep {
     @Bean
     public Step memberGradeUpdateStep() throws Exception {
         return stepBuilderFactory.get("memberGradeUpdateStep")
-                                 .<MemberPaymentResult, Member>chunk(CHUNK_SIZE)
+                                 .<MemberPaymentDto, Member>chunk(CHUNK_SIZE)
                                  .reader(memberReader())
                                  .processor(updateGradeProcessor())
                                  .writer(memberWriter())
@@ -74,25 +74,25 @@ public class UpdateMemberGradeStep {
      * @since 1.0.0
      */
     @Bean
-    public JdbcPagingItemReader<MemberPaymentResult> memberReader() throws Exception {
+    public JdbcPagingItemReader<MemberPaymentDto> memberReader() throws Exception {
         Map<String, Object> parameterValues = new HashMap<>();
         parameterValues.put("start_date", "2022-08-01");
         parameterValues.put("end_date", "2022-08-31");
 
-        return new JdbcPagingItemReaderBuilder<MemberPaymentResult>().name("memberReader")
-                                                                     .pageSize(CHUNK_SIZE)
-                                                                     .dataSource(this.dataSource)
-                                                                     .queryProvider(createQueryProvider())
-                                                                     .parameterValues(parameterValues)
-                                                                     .rowMapper(new BeanPropertyRowMapper<>(MemberPaymentResult.class))
-                                                                     .build();
+        return new JdbcPagingItemReaderBuilder<MemberPaymentDto>().name("memberReader")
+                                                                  .pageSize(CHUNK_SIZE)
+                                                                  .dataSource(this.dataSource)
+                                                                  .queryProvider(createQueryProvider())
+                                                                  .parameterValues(parameterValues)
+                                                                  .rowMapper(new BeanPropertyRowMapper<>(MemberPaymentDto.class))
+                                                                  .build();
     }
 
     /**
-     * 회원과 주문 테이블을 조회하여 총 구매 금액을 조회하는 쿼리를 설정했습니다.
+     * 회원과 주문 테이블을 조회하여 총 구매 금액을 조회하는 쿼리를 설정합니다.
      *
      * @return 작성된 쿼리를 반환합니다.
-     * @throws Exception - 데이터를 변환할 때 발생할 수 있는 에러입니다.
+     * @throws Exception - 데이터를 객체로 변환할 때 발생할 수 있는 에러입니다.
      */
     private PagingQueryProvider createQueryProvider() throws Exception {
         Map<String, Order> sortKey = new HashMap<>();
@@ -117,11 +117,11 @@ public class UpdateMemberGradeStep {
      * @since 1.0.0
      */
     @Bean
-    public ItemProcessor<MemberPaymentResult, Member> updateGradeProcessor() {
+    public ItemProcessor<MemberPaymentDto, Member> updateGradeProcessor() {
 
-        return memberPaymentResult -> {
+        return memberPaymentDto -> {
             long memberGrade;
-            long account = memberPaymentResult.getTotalAmount();
+            long account = memberPaymentDto.getTotalAmount();
 
             if (account < 300_000L) {
                 memberGrade = MEMBER;
@@ -132,7 +132,7 @@ public class UpdateMemberGradeStep {
             }
             MemberGrade grade = memberGradeRepository.findById(memberGrade)
                                                      .orElseThrow(MemberGradeNotFoundException::new);
-            Member member = memberRepository.findById(memberPaymentResult.getMemberNo())
+            Member member = memberRepository.findById(memberPaymentDto.getMemberNo())
                                             .orElseThrow(MemberNotFoundException::new);
             member.updateGrade(grade);
             return member;
