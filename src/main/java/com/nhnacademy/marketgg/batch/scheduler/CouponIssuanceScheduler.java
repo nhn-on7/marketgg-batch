@@ -76,7 +76,8 @@ public class CouponIssuanceScheduler {
      * @since 1.0.0
      */
     @Async
-    @Scheduled(cron = "@monthly", zone = "Asia/Seoul")
+    // @Scheduled(cron = "@monthly", zone = "Asia/Seoul")
+    @Scheduled(fixedDelay = 10000)
     public void scheduleMemberGradeCoupon() {
         log.info("등급 쿠폰 스케줄러 시작 시간: {}", LocalDateTime.now());
 
