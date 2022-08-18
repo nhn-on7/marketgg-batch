@@ -100,7 +100,7 @@ public class UpdateMemberGradeStep {
 
         SqlPagingQueryProviderFactoryBean queryProvider = new SqlPagingQueryProviderFactoryBean();
         queryProvider.setDataSource(this.dataSource);
-        queryProvider.setSelectClause("member_no, sum(total_amount) as total_amount");
+        queryProvider.setSelectClause("select member_no, sum(total_amount) as total_amount");
         queryProvider.setFromClause("from orders");
         queryProvider.setWhereClause("where created_at >= :start_date and created_at <= :end_date");
         queryProvider.setGroupClause("group by member_no");

@@ -2,21 +2,28 @@ package com.nhnacademy.marketgg.batch.batchstep;
 
 import static com.nhnacademy.marketgg.batch.domain.constant.CouponName.GVIP;
 
+import com.nhnacademy.marketgg.batch.domain.dto.GivenCouponDto;
+import com.nhnacademy.marketgg.batch.domain.dto.MemberDto;
 import com.nhnacademy.marketgg.batch.domain.entity.Coupon;
-import com.nhnacademy.marketgg.batch.domain.entity.GivenCoupon;
-import com.nhnacademy.marketgg.batch.domain.entity.Member;
 import com.nhnacademy.marketgg.batch.exception.CouponNotFoundException;
 import com.nhnacademy.marketgg.batch.repository.coupon.CouponRepository;
-import javax.persistence.EntityManagerFactory;
+import java.util.HashMap;
+import java.util.Map;
+import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.item.ItemProcessor;
-import org.springframework.batch.item.database.JpaItemWriter;
-import org.springframework.batch.item.database.JpaPagingItemReader;
-import org.springframework.batch.item.database.builder.JpaPagingItemReaderBuilder;
+import org.springframework.batch.item.database.JdbcBatchItemWriter;
+import org.springframework.batch.item.database.JdbcPagingItemReader;
+import org.springframework.batch.item.database.Order;
+import org.springframework.batch.item.database.PagingQueryProvider;
+import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
+import org.springframework.batch.item.database.builder.JdbcPagingItemReaderBuilder;
+import org.springframework.batch.item.database.support.SqlPagingQueryProviderFactoryBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 
 /**
  * Gvip 회원을 조회하여 등급 쿠폰을 지급하는 Batch Step 과 Step Process(Reader, Processor, Writer) 입니다.
@@ -28,7 +35,8 @@ import org.springframework.context.annotation.Configuration;
 @RequiredArgsConstructor
 public class GiveCouponGVIPMemberStep {
 
-    private final EntityManagerFactory entityManagerFactory;
+    private final DataSource dataSource;
+
     private final StepBuilderFactory stepBuilderFactory;
     private final CouponRepository couponRepository;
 
@@ -42,13 +50,13 @@ public class GiveCouponGVIPMemberStep {
      * @since 1.0.0
      */
     @Bean
-    public Step gVipGivenCouponMemberStep() {
+    public Step gVipGivenCouponMemberStep() throws Exception {
         return stepBuilderFactory.get("gVipGivenCouponMemberStep")
-                                 .<Member, GivenCoupon>chunk(CHUNK_SIZE)
+                                 .<MemberDto, GivenCouponDto>chunk(CHUNK_SIZE)
                                  .reader(gVIPMemberReader())
                                  .processor(gVipGivenCouponProcessor())
                                  .writer(gVIPMemberWriter())
-                                 .allowStartIfComplete(true)
+                                 .allowStartIfComplete(true)  // Job 이 Complete 된 상태여도 다시 시작하는 옵션
                                  .build();
     }
 
@@ -61,13 +69,38 @@ public class GiveCouponGVIPMemberStep {
      * @since 1.0.0
      */
     @Bean
-    public JpaPagingItemReader<Member> gVIPMemberReader() {
-        return new JpaPagingItemReaderBuilder<Member>()
-            .queryString("SELECT m FROM Member m WHERE m.memberGrade = 1")
-            .pageSize(CHUNK_SIZE)
-            .entityManagerFactory(entityManagerFactory)
+    public JdbcPagingItemReader<MemberDto> gVIPMemberReader() throws Exception {
+        Map<String, Object> parameterValues = new HashMap<>();
+        parameterValues.put("memberGradeNo", 1);
+
+        return new JdbcPagingItemReaderBuilder<MemberDto>()
             .name("gVIPMemberReader")
+            .pageSize(CHUNK_SIZE)
+            .dataSource(this.dataSource)
+            .queryProvider(createQueryProvider())
+            .parameterValues(parameterValues)
+            .rowMapper(new BeanPropertyRowMapper<>(MemberDto.class))
             .build();
+    }
+
+    /**
+     * 회원에서 Gvip 등급인 회원만 조회하는 쿼리를 설정합니다.
+     *
+     * @return 작성된 쿼리를 반환합니다.
+     * @throws Exception - 데이터를 객체로 변환할 때 발생할 수 있는 에러입니다.
+     */
+    private PagingQueryProvider createQueryProvider() throws Exception {
+        Map<String, Order> sortKey = new HashMap<>();
+        sortKey.put("member_no", Order.ASCENDING);
+
+        SqlPagingQueryProviderFactoryBean queryProvider = new SqlPagingQueryProviderFactoryBean();
+        queryProvider.setDataSource(this.dataSource);
+        queryProvider.setSelectClause("select member_no");
+        queryProvider.setFromClause("from members");
+        queryProvider.setWhereClause("where member_grade_no = :memberGradeNo");
+        queryProvider.setSortKeys(sortKey);
+
+        return queryProvider.getObject();
     }
 
     /**
@@ -78,10 +111,10 @@ public class GiveCouponGVIPMemberStep {
      * @since 1.0.0
      */
     @Bean
-    public ItemProcessor<Member, GivenCoupon> gVipGivenCouponProcessor() {
+    public ItemProcessor<MemberDto, GivenCouponDto> gVipGivenCouponProcessor() {
         Coupon gVipCoupon = couponRepository.findCouponByName(GVIP.couponName())
                                             .orElseThrow(CouponNotFoundException::new);
-        return member -> new GivenCoupon(gVipCoupon, member);
+        return memberDto -> new GivenCouponDto(memberDto.getMemberNo(), gVipCoupon.getId());
     }
 
     /**
@@ -92,10 +125,15 @@ public class GiveCouponGVIPMemberStep {
      * @since 1.0.0
      */
     @Bean
-    public JpaItemWriter<GivenCoupon> gVIPMemberWriter() {
-        JpaItemWriter<GivenCoupon> writer = new JpaItemWriter<>();
-        writer.setEntityManagerFactory(entityManagerFactory);
-        return writer;
+    public JdbcBatchItemWriter<GivenCouponDto> gVIPMemberWriter() {
+
+        return new JdbcBatchItemWriterBuilder<GivenCouponDto>()
+            .dataSource(this.dataSource)
+            .sql("insert into given_coupons" +
+                "(coupon_no, member_no, created_at) " +
+                "values (:couponNo, :memberNo, now())")
+            .beanMapped()  // GivenCouponDto 의 프로퍼티 네임으로 매핑
+            .build();
     }
 
 }
