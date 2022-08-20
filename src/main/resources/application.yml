@@ -1,19 +1,7 @@
-server:
-  port: 5555
-
 spring:
   application:
     name: marketgg-batch
 
-  batch:
-    job:
-      enabled: false
-    jdbc:
-      initialize-schema: always
-
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://133.186.211.156:3306/marketgg_shop?rewriteBatchedStatements=true
-    username: on7
-    password: ?nk9Wa#^Bg)on71!*,^2=d
+  config:
+    import: "optional:configserver:http://config.marketgg.shop"
 
