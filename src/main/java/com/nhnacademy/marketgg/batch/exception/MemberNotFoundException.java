@@ -1,6 +1,6 @@
 package com.nhnacademy.marketgg.batch.exception;
 
-public class MemberNotFoundException extends NotFoundDataException {
+public class MemberNotFoundException extends IllegalArgumentException {
 
     private static final String ERROR = "회원을 찾을 수 없습니다.";
 

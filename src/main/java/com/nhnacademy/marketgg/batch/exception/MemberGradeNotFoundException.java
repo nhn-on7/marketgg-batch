@@ -1,6 +1,6 @@
 package com.nhnacademy.marketgg.batch.exception;
 
-public class MemberGradeNotFoundException extends NotFoundDataException {
+public class MemberGradeNotFoundException extends IllegalArgumentException {
 
     private static final String ERROR = "회원 등급을 찾을 수 없습니다.";
 

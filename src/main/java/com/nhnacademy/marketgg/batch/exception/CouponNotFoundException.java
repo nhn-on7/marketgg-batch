@@ -1,6 +1,6 @@
 package com.nhnacademy.marketgg.batch.exception;
 
-public class CouponNotFoundException extends NotFoundDataException {
+public class CouponNotFoundException extends IllegalArgumentException {
 
     /**
      * 쿠폰을 찾을 수 없을 때 예외처리입니다.
