@@ -1,5 +1,6 @@
 package com.nhnacademy.marketgg.batch.batchstep;
 
+import com.nhnacademy.marketgg.batch.config.BatchJobParameter;
 import com.nhnacademy.marketgg.batch.domain.dto.MemberPaymentDto;
 import com.nhnacademy.marketgg.batch.domain.entity.Member;
 import com.nhnacademy.marketgg.batch.domain.entity.MemberGrade;
@@ -13,7 +14,9 @@ import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Step;
+import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.database.JdbcPagingItemReader;
 import org.springframework.batch.item.database.JpaItemWriter;
@@ -40,11 +43,18 @@ public class UpdateMemberGradeStep {
     private final MemberGradeRepository memberGradeRepository;
     private final MemberRepository memberRepository;
     private final DataSource dataSource;
+    private final BatchJobParameter jobParameter;
 
     private static final int CHUNK_SIZE = 100;
     private static final long GVIP = 1L;
     private static final long VIP = 2L;
     private static final long MEMBER = 3L;
+
+    @Bean
+    @JobScope
+    public BatchJobParameter jobParameter() {
+        return new BatchJobParameter();
+    }
 
     /**
      * 주문 내역을 조회하고 구매 금액 별 등급을 업데이트하고 저장하는 Step 입니다.
@@ -55,6 +65,7 @@ public class UpdateMemberGradeStep {
      * @since 1.0.0
      */
     @Bean
+    @JobScope
     public Step memberGradeUpdateStep() throws Exception {
         return stepBuilderFactory.get("memberGradeUpdateStep")
                                  .<MemberPaymentDto, Member>chunk(CHUNK_SIZE)
@@ -74,17 +85,19 @@ public class UpdateMemberGradeStep {
      * @since 1.0.0
      */
     @Bean
+    @StepScope
     public JdbcPagingItemReader<MemberPaymentDto> memberReader() throws Exception {
         Map<String, Object> parameterValues = new HashMap<>();
-        parameterValues.put("start_date", "2022-08-01");
-        parameterValues.put("end_date", "2022-08-31");
+        parameterValues.put("start_date", jobParameter.getStartDate());
+        parameterValues.put("end_date", jobParameter.getEndDate());
 
         return new JdbcPagingItemReaderBuilder<MemberPaymentDto>().name("memberReader")
                                                                   .pageSize(CHUNK_SIZE)
                                                                   .dataSource(this.dataSource)
                                                                   .queryProvider(createQueryProvider())
                                                                   .parameterValues(parameterValues)
-                                                                  .rowMapper(new BeanPropertyRowMapper<>(MemberPaymentDto.class))
+                                                                  .rowMapper(new BeanPropertyRowMapper<>(
+                                                                      MemberPaymentDto.class))
                                                                   .build();
     }
 
@@ -102,7 +115,7 @@ public class UpdateMemberGradeStep {
         queryProvider.setDataSource(this.dataSource);
         queryProvider.setSelectClause("select member_no, sum(total_amount) as total_amount");
         queryProvider.setFromClause("from orders");
-        queryProvider.setWhereClause("where created_at >= :start_date and created_at <= :end_date");
+        queryProvider.setWhereClause("where created_at >= :start_date and created_at < :end_date");
         queryProvider.setGroupClause("group by member_no");
         queryProvider.setSortKeys(sortKey);
 
@@ -117,6 +130,7 @@ public class UpdateMemberGradeStep {
      * @since 1.0.0
      */
     @Bean
+    @StepScope
     public ItemProcessor<MemberPaymentDto, Member> updateGradeProcessor() {
 
         return memberPaymentDto -> {
@@ -147,6 +161,7 @@ public class UpdateMemberGradeStep {
      * @since 1.0.0
      */
     @Bean
+    @StepScope
     public JpaItemWriter<Member> memberWriter() {
         JpaItemWriter<Member> jpaItemWriter = new JpaItemWriter<>();
         jpaItemWriter.setEntityManagerFactory(entityManagerFactory);

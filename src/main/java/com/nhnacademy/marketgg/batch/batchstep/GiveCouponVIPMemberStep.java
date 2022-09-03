@@ -85,7 +85,7 @@ public class GiveCouponVIPMemberStep {
     }
 
     /**
-     * 회원에서 Gvip 등급인 회원만 조회하는 쿼리를 설정합니다.
+     * 회원에서 vip 등급인 회원만 조회하는 쿼리를 설정합니다.
      *
      * @return 작성된 쿼리를 반환합니다.
      * @throws Exception - 데이터를 객체로 변환할 때 발생할 수 있는 에러입니다.
