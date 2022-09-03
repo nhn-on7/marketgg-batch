@@ -41,7 +41,7 @@ public class UpdateMemberGradeStep {
     private final MemberRepository memberRepository;
     private final DataSource dataSource;
 
-    private static final int CHUNK_SIZE = 5;
+    private static final int CHUNK_SIZE = 100;
     private static final long GVIP = 1L;
     private static final long VIP = 2L;
     private static final long MEMBER = 3L;

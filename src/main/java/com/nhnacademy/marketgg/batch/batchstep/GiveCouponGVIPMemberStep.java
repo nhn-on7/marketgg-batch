@@ -40,7 +40,7 @@ public class GiveCouponGVIPMemberStep {
     private final StepBuilderFactory stepBuilderFactory;
     private final CouponRepository couponRepository;
 
-    private static final int CHUNK_SIZE = 5;
+    private static final int CHUNK_SIZE = 100;
 
     /**
      * gVip 회원을 모두 조회하고 등급 쿠폰을 발급하는 Step 입니다.
