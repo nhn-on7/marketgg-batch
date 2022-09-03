@@ -10,6 +10,7 @@ import com.nhnacademy.marketgg.batch.exception.CouponNotFoundException;
 import com.nhnacademy.marketgg.batch.repository.coupon.CouponRepository;
 import com.nhnacademy.marketgg.batch.repository.givencoupon.GivenCouponRepository;
 import com.nhnacademy.marketgg.batch.repository.member.MemberRepository;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.JobParametersInvalidException;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.repository.JobExecutionAlreadyRunningException;
@@ -80,8 +82,17 @@ public class CouponIssuanceScheduler {
     public void scheduleMemberGradeCoupon() {
         log.info("등급 쿠폰 스케줄러 시작 시간: {}", LocalDateTime.now());
 
+        LocalDate previousMonth = LocalDate.now().minusMonths(1L);
+        LocalDate startOfDay = previousMonth.withDayOfMonth(1).atStartOfDay().toLocalDate();
+        LocalDate endOfDay = LocalDate.now().withDayOfMonth(1).atStartOfDay().toLocalDate();
+
+        JobParameters jobParameters =
+            new JobParametersBuilder()
+                .addString("startDate", startOfDay.format(DateTimeFormatter.ISO_DATE))
+                .addString("endDate", endOfDay.format(DateTimeFormatter.ISO_DATE))
+                .toJobParameters();
+
         Job job = jobConfig.memberGradeJob();
-        JobParameters jobParameters = new JobParameters();
 
         try {
             jobLauncher.run(job, jobParameters);

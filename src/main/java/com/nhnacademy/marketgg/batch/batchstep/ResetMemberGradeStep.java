@@ -30,7 +30,7 @@ public class ResetMemberGradeStep {
     private final StepBuilderFactory stepBuilderFactory;
     private final MemberGradeRepository memberGradeRepository;
 
-    private static final int CHUNK_SIZE = 5;
+    private static final int CHUNK_SIZE = 1000;
     private static final long MEMBER = 3L;
 
     /**

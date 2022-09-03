@@ -15,9 +15,11 @@ public class CouponRepositoryImpl extends QuerydslRepositorySupport implements C
 
     @Override
     public Optional<Coupon> findCouponByName(String name) {
+
         Coupon result = from(coupon)
             .where(coupon.name.eq(name))
-            .fetchOne();
+            .orderBy(coupon.id.desc())
+            .fetchFirst();
 
         return Optional.ofNullable(result);
     }
