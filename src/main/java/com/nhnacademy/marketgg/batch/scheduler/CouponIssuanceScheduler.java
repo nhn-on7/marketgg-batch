@@ -78,9 +78,8 @@ public class CouponIssuanceScheduler {
      * @since 1.0.0
      */
     @Async
-    // @Scheduled(cron = "@monthly", zone = "Asia/Seoul")
-    @Scheduled(fixedDelay = 100000L)
-    public void scheduleMemberGradeCoupon() throws Exception {
+    @Scheduled(cron = "@monthly", zone = "Asia/Seoul")
+    public void scheduleMemberGradeCoupon() {
         log.info("등급 쿠폰 스케줄러 시작 시간: {}", LocalDateTime.now());
 
         LocalDate previousMonth = LocalDate.now().minusMonths(1L);
