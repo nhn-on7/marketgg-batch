@@ -8,7 +8,9 @@ import com.nhnacademy.marketgg.batch.exception.MemberGradeNotFoundException;
 import com.nhnacademy.marketgg.batch.exception.MemberNotFoundException;
 import com.nhnacademy.marketgg.batch.repository.member.MemberRepository;
 import com.nhnacademy.marketgg.batch.repository.membergrade.MemberGradeRepository;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
@@ -24,6 +26,7 @@ import org.springframework.batch.item.database.Order;
 import org.springframework.batch.item.database.PagingQueryProvider;
 import org.springframework.batch.item.database.builder.JdbcPagingItemReaderBuilder;
 import org.springframework.batch.item.database.support.SqlPagingQueryProviderFactoryBean;
+import org.springframework.batch.item.support.CompositeItemProcessor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -96,8 +99,7 @@ public class UpdateMemberGradeStep {
                                                                   .dataSource(this.dataSource)
                                                                   .queryProvider(createQueryProvider())
                                                                   .parameterValues(parameterValues)
-                                                                  .rowMapper(new BeanPropertyRowMapper<>(
-                                                                      MemberPaymentDto.class))
+                                                                  .rowMapper(new BeanPropertyRowMapper<>(MemberPaymentDto.class))
                                                                   .build();
     }
 
@@ -131,8 +133,18 @@ public class UpdateMemberGradeStep {
      */
     @Bean
     @StepScope
-    public ItemProcessor<MemberPaymentDto, Member> updateGradeProcessor() {
+    public CompositeItemProcessor<MemberPaymentDto, Member> updateGradeProcessor() {
 
+        List<ItemProcessor<MemberPaymentDto, Member>> delegates = new ArrayList<>(1);
+        delegates.add(processor1());
+
+        CompositeItemProcessor<MemberPaymentDto, Member> processor = new CompositeItemProcessor<>();
+
+        processor.setDelegates(delegates);
+        return processor;
+    }
+
+    public ItemProcessor<MemberPaymentDto, Member> processor1() {
         return memberPaymentDto -> {
             long memberGrade;
             long account = memberPaymentDto.getTotalAmount();

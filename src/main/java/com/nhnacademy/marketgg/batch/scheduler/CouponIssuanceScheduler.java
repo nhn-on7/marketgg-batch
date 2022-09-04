@@ -73,13 +73,14 @@ public class CouponIssuanceScheduler {
 
     /**
      * 매월 1일 자정에 회원 등급을 업데이트하고 등급에 따른 쿠폰을 지급해주는 Batch Job 을 실행하는 Scheduler 입니다.
-     *
+     *x
      * @author 민아영
      * @since 1.0.0
      */
     @Async
-    @Scheduled(cron = "@monthly", zone = "Asia/Seoul")
-    public void scheduleMemberGradeCoupon() {
+    // @Scheduled(cron = "@monthly", zone = "Asia/Seoul")
+    @Scheduled(fixedDelay = 100000L)
+    public void scheduleMemberGradeCoupon() throws Exception {
         log.info("등급 쿠폰 스케줄러 시작 시간: {}", LocalDateTime.now());
 
         LocalDate previousMonth = LocalDate.now().minusMonths(1L);
