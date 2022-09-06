@@ -47,6 +47,8 @@ public class GiveCouponMemberStep {
     private final CouponRepository couponRepository;
 
     private static final int CHUNK_SIZE = 100;
+    private static final long GVIP_NO = 1L;
+    private static final long VIP_NO = 2L;
 
 
     @Bean
@@ -66,7 +68,7 @@ public class GiveCouponMemberStep {
     @Bean
     @JobScope
     public Step gVipGivenCouponMemberStep() throws Exception {
-        jobParameter().setGradeNo(1L);
+        jobParameter().setGradeNo(GVIP_NO);
         jobParameter().setCouponName(GVIP);
         return stepBuilderFactory.get("gVipGivenCouponMemberStep")
                                  .<MemberDto, GivenCouponDto>chunk(CHUNK_SIZE)
@@ -87,7 +89,7 @@ public class GiveCouponMemberStep {
     @Bean
     @JobScope
     public Step vipGivenCouponMemberStep() throws Exception {
-        jobParameter().setGradeNo(2L);
+        jobParameter().setGradeNo(VIP_NO);
         jobParameter().setCouponName(VIP);
         return stepBuilderFactory.get("vipGivenCouponMemberStep")
                                  .<MemberDto, GivenCouponDto>chunk(CHUNK_SIZE)
