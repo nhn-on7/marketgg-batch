@@ -55,7 +55,7 @@ public class UpdateMemberGradeStep {
 
     @Bean
     @JobScope
-    public BatchJobParameter jobParameter() {
+    public BatchJobParameter jobParameterInUpdateGradeStep() {
         return new BatchJobParameter();
     }
 
